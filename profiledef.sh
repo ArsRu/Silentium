@@ -3,7 +3,7 @@
 # shellcheck disable=SC2034
 iso_name="silentium"
 # shellcheck disable=SC2034
-iso_label="SILENTIUM_$(date +%Y%m)"
+iso_label="SILENTIUM_ROOT"
 # shellcheck disable=SC2034
 iso_publisher="Silentium Project <https://silentium.local>"
 # shellcheck disable=SC2034
@@ -11,16 +11,13 @@ iso_application="Silentium Live/Rescue ISO"
 # shellcheck disable=SC2034
 iso_version="1.0.0"
 # shellcheck disable=SC2034
-install_dir="arch"
+install_dir="silentium"
 # shellcheck disable=SC2034
 buildmodes=('iso')
 # shellcheck disable=SC2034
 bootmodes=(
-  'bios.syslinux.mbr'
-  'bios.syslinux.eltorito'
-  'uefi-ia32.grub.esp'
-  'uefi-x64.grub.esp'
-  'uefi-x64.grub.eltorito'
+  'bios.grub'
+  'uefi.grub'
 )
 # shellcheck disable=SC2034
 arch="x86_64"
