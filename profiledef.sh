@@ -16,10 +16,8 @@ install_dir="silentium"
 buildmodes=('iso')
 # shellcheck disable=SC2034
 bootmodes=(
-  'bios.grub.mbr'
-  'bios.grub.eltorito'
-  'uefi-x64.grub.esp'
-  'uefi-x64.grub.eltorito'
+  'bios.grub'
+  'uefi.grub'
 )
 # shellcheck disable=SC2034
 arch="x86_64"
