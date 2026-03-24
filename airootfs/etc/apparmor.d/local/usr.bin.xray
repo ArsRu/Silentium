@@ -1,0 +1,4 @@
+# Silentium local overrides for xray profile
+# Loaded automatically if upstream profile exists.
+/var/log/xray/** rw,
+/etc/xray/** r,

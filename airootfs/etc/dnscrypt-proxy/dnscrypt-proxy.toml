@@ -1,0 +1,49 @@
+# Silentium DNSCrypt profile with tracker/ad blocking.
+
+server_names = ['quad9-dnscrypt-ip4-filter-pri', 'mullvad-adblock-doh', 'cloudflare']
+listen_addresses = ['127.0.0.1:53', '[::1]:53']
+max_clients = 250
+ipv4_servers = true
+ipv6_servers = false
+dnscrypt_servers = true
+doh_servers = true
+require_dnssec = true
+require_nolog = true
+require_nofilter = false
+fallback_resolver = '9.9.9.9:53'
+ignore_system_dns = true
+netprobe_timeout = 60
+block_ipv6 = true
+cache = true
+cache_size = 4096
+cache_min_ttl = 2400
+cache_max_ttl = 86400
+
+[query_log]
+  file = '/var/log/dnscrypt-proxy/query.log'
+  format = 'tsv'
+
+[nx_log]
+  file = '/var/log/dnscrypt-proxy/nx.log'
+  format = 'tsv'
+
+[blacklist]
+  blacklist_file = '/etc/dnscrypt-proxy/blacklist.txt'
+
+[blocked_names]
+  blocked_names_file = '/etc/dnscrypt-proxy/blocked-names.txt'
+
+[sources]
+  [sources.'public-resolvers']
+  urls = ['https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md']
+  minisign_key = 'RWQf6LRCGA9P3wM2prM3KP69xQ4N9l0eV3JxB5A5fTLj8jY5nS5f0f7g'
+  cache_file = '/var/cache/dnscrypt-proxy/public-resolvers.md'
+
+  [sources.'relays']
+  urls = ['https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/relays.md']
+  minisign_key = 'RWQf6LRCGA9P3wM2prM3KP69xQ4N9l0eV3JxB5A5fTLj8jY5nS5f0f7g'
+  cache_file = '/var/cache/dnscrypt-proxy/relays.md'
+
+# OISD is consumed as a local blocked names list.
+# Refresh manually when needed:
+# curl -L https://big.oisd.nl/domainswild -o /etc/dnscrypt-proxy/blocked-names.txt

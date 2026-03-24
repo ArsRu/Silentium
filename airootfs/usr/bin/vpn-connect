@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_DIR="/etc/xray/configs"
+SERVICE_NAME="xray.service"
+TARGET_LINK="/etc/xray/configs/default.json"
+
+mapfile -t configs < <(find "$CONFIG_DIR" -maxdepth 1 -type f -name '*.json' ! -name 'default.json' | sort)
+
+if [[ ${#configs[@]} -eq 0 ]]; then
+  echo "[INFO] Дополнительные VPN-конфиги не найдены в $CONFIG_DIR"
+  echo "[INFO] Используется текущий $TARGET_LINK"
+  exit 0
+fi
+
+echo "Доступные VPN-конфиги:"
+for i in "${!configs[@]}"; do
+  printf '  %d) %s\n' "$((i + 1))" "$(basename "${configs[$i]}")"
+done
+
+read -rp "Выберите номер конфига: " selected
+if ! [[ "$selected" =~ ^[0-9]+$ ]] || (( selected < 1 || selected > ${#configs[@]} )); then
+  echo "[ОШИБКА] Некорректный выбор"
+  exit 1
+fi
+
+chosen="${configs[$((selected - 1))]}"
+install -Dm0644 "$chosen" "$TARGET_LINK"
+
+echo "[INFO] Выбран конфиг: $(basename "$chosen")"
+systemctl daemon-reload
+systemctl restart "$SERVICE_NAME"
+echo "[OK] VPN сервис перезапущен"

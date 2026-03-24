@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""Minimal TUI installer for Silentium using Python curses + arch-install tools.
+
+WARNING: destructive operations. Run as root from live ISO.
+"""
+
+import curses
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+def run(cmd):
+    print(f"[RUN] {' '.join(cmd)}")
+    subprocess.run(cmd, check=True)
+
+
+def prompt(stdscr, y, label, default=""):
+    curses.echo()
+    stdscr.addstr(y, 2, f"{label}: ")
+    stdscr.addstr(y, len(label) + 4, default)
+    stdscr.refresh()
+    value = stdscr.getstr(y, len(label) + 4 + len(default), 64).decode().strip()
+    curses.noecho()
+    return value or default
+
+
+def menu(stdscr, title, options):
+    idx = 0
+    while True:
+        stdscr.clear()
+        stdscr.addstr(1, 2, title, curses.A_BOLD)
+        stdscr.addstr(2, 2, "Use arrows, Enter to select")
+        for i, opt in enumerate(options):
+            mode = curses.A_REVERSE if i == idx else curses.A_NORMAL
+            stdscr.addstr(4 + i, 4, opt, mode)
+        key = stdscr.getch()
+        if key in (curses.KEY_UP, ord("k")):
+            idx = (idx - 1) % len(options)
+        elif key in (curses.KEY_DOWN, ord("j")):
+            idx = (idx + 1) % len(options)
+        elif key in (10, 13):
+            return options[idx]
+
+
+def installer_ui(stdscr):
+    curses.curs_set(0)
+    stdscr.clear()
+    stdscr.addstr(1, 2, "Silentium Installer", curses.A_BOLD)
+    stdscr.addstr(3, 2, "WARNING: installer will erase selected disk.")
+    stdscr.refresh()
+
+    disks = []
+    lsblk = subprocess.check_output(["lsblk", "-dn", "-o", "NAME,SIZE,TYPE"], text=True)
+    for line in lsblk.strip().splitlines():
+        name, size, kind = line.split()
+        if kind == "disk":
+            disks.append(f"/dev/{name} ({size})")
+
+    if not disks:
+        raise RuntimeError("No disk found")
+
+    selected_disk = menu(stdscr, "Select target disk", disks).split()[0]
+    fs_type = menu(stdscr, "Select root filesystem", ["ext4", "btrfs"])
+
+    stdscr.clear()
+    stdscr.addstr(1, 2, "User configuration", curses.A_BOLD)
+    hostname = prompt(stdscr, 3, "Hostname", "silentium")
+    username = prompt(stdscr, 4, "Username", "user")
+    timezone = prompt(stdscr, 5, "Timezone", "UTC")
+
+    stdscr.addstr(7, 2, f"Disk: {selected_disk}")
+    stdscr.addstr(8, 2, f"FS: {fs_type}")
+    stdscr.addstr(9, 2, f"Hostname: {hostname}")
+    stdscr.addstr(10, 2, f"User: {username}")
+    stdscr.addstr(12, 2, "Type YES to continue: ")
+    curses.echo()
+    conf = stdscr.getstr(12, 25, 8).decode().strip()
+    curses.noecho()
+    if conf != "YES":
+        return None
+
+    return {
+        "disk": selected_disk,
+        "fs": fs_type,
+        "hostname": hostname,
+        "username": username,
+        "timezone": timezone,
+    }
+
+
+def partition_and_install(cfg):
+    disk = cfg["disk"]
+    efi_part = f"{disk}1"
+    root_part = f"{disk}2"
+
+    # GPT layout for modern systems; includes BIOS grub compatibility partition.
+    run(["sgdisk", "--zap-all", disk])
+    run(["sgdisk", "-n", "1:1MiB:+512MiB", "-t", "1:ef00", disk])
+    run(["sgdisk", "-n", "2:513MiB:+1MiB", "-t", "2:ef02", disk])
+    run(["sgdisk", "-n", "3:514MiB:0", "-t", "3:8300", disk])
+
+    root_part = f"{disk}3"
+    run(["mkfs.fat", "-F32", efi_part])
+    if cfg["fs"] == "btrfs":
+        run(["mkfs.btrfs", "-f", root_part])
+    else:
+        run(["mkfs.ext4", "-F", root_part])
+
+    run(["mount", root_part, "/mnt"])
+    run(["mkdir", "-p", "/mnt/boot"])
+    run(["mount", efi_part, "/mnt/boot"])
+
+    run(["pacstrap", "-K", "/mnt", "base", "linux-zen", "linux-firmware", "grub", "efibootmgr", "networkmanager", "sudo", "nano", "xray-core", "dnscrypt-proxy", "nftables", "apparmor"])
+
+    with open("/mnt/etc/hostname", "w", encoding="utf-8") as f:
+        f.write(cfg["hostname"] + "\n")
+
+    with open("/mnt/etc/locale.gen", "w", encoding="utf-8") as f:
+        f.write("en_US.UTF-8 UTF-8\n")
+
+    with open("/mnt/etc/locale.conf", "w", encoding="utf-8") as f:
+        f.write("LANG=en_US.UTF-8\n")
+
+    with open("/mnt/install-chroot.sh", "w", encoding="utf-8") as f:
+        f.write(f"""#!/usr/bin/env bash
+set -e
+ln -sf /usr/share/zoneinfo/{cfg['timezone']} /etc/localtime
+hwclock --systohc
+locale-gen
+systemctl enable NetworkManager nftables dnscrypt-proxy apparmor
+useradd -m -G wheel,audio,video,network -s /bin/bash {cfg['username']}
+echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
+chmod 0440 /etc/sudoers.d/10-wheel
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Silentium
+grub-install --target=i386-pc {disk}
+grub-mkconfig -o /boot/grub/grub.cfg
+""")
+
+    os.chmod("/mnt/install-chroot.sh", 0o755)
+    with open("/mnt/etc/fstab", "w", encoding="utf-8") as fstab:
+        fstab.write(subprocess.check_output(["genfstab", "-U", "/mnt"], text=True))
+    run(["arch-chroot", "/mnt", "/install-chroot.sh"])
+    run(["rm", "-f", "/mnt/install-chroot.sh"])
+
+
+def main():
+    if os.geteuid() != 0:
+        print("Run installer as root")
+        sys.exit(1)
+
+    cfg = curses.wrapper(installer_ui)
+    if not cfg:
+        print("Installation cancelled")
+        return
+
+    try:
+        partition_and_install(cfg)
+    except subprocess.CalledProcessError as exc:
+        print(f"Installation failed: {exc}")
+        sys.exit(exc.returncode)
+
+    print("Installation complete. Reboot after unmounting /mnt.")
+
+
+if __name__ == "__main__":
+    main()

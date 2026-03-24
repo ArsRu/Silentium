@@ -1,0 +1,4 @@
+# Silentium local overrides for dnscrypt-proxy profile
+/etc/dnscrypt-proxy/** r,
+/var/cache/dnscrypt-proxy/** rw,
+/var/log/dnscrypt-proxy/** rw,

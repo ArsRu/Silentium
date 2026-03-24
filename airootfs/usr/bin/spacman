@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RED_LIST=(zoom discord teamviewer anydesk skype slack telegram-desktop)
+YELLOW_LIST=(nvidia nvidia-utils nvidia-settings broadcom-wl spotify steam)
+
+FORCE_DANGEROUS=0
+PACMAN_ARGS=()
+PACKAGES=()
+INSTALL_MODE=0
+
+in_list() {
+  local needle="$1"; shift
+  local item
+  for item in "$@"; do
+    [[ "$item" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    --force-dangerous)
+      FORCE_DANGEROUS=1
+      ;;
+    -S|-Syu|-Sy|-Syyu|-U)
+      INSTALL_MODE=1
+      PACMAN_ARGS+=("$arg")
+      ;;
+    -*)
+      PACMAN_ARGS+=("$arg")
+      ;;
+    *)
+      PACMAN_ARGS+=("$arg")
+      if (( INSTALL_MODE == 1 )); then
+        PACKAGES+=("$arg")
+      fi
+      ;;
+  esac
+done
+
+if (( INSTALL_MODE == 1 )) && (( ${#PACKAGES[@]} > 0 )); then
+  for pkg in "${PACKAGES[@]}"; do
+    if in_list "$pkg" "${RED_LIST[@]}"; then
+      if (( FORCE_DANGEROUS == 0 )); then
+        cat <<ERR
+[ОШИБКА] Пакет '$pkg' находится в КРАСНОМ списке.
+Он собирает метаданные и/или принадлежит компании с доказанной слежкой.
+Установка возможна только с флагом --force-dangerous.
+ERR
+        exit 1
+      fi
+    fi
+
+    if in_list "$pkg" "${YELLOW_LIST[@]}"; then
+      cat <<WARN
+[ПРЕДУПРЕЖДЕНИЕ] Пакет '$pkg' находится в ЖЁЛТОМ списке.
+Его исходный код закрыт, но явных доказательств слежки нет.
+Продолжить установку? (y/N)
+WARN
+      read -r answer
+      case "${answer,,}" in
+        y|yes) ;;
+        *)
+          echo "[ОТМЕНА] Установка прервана пользователем."
+          exit 1
+          ;;
+      esac
+    fi
+  done
+fi
+
+exec /usr/bin/pacman "${PACMAN_ARGS[@]}"

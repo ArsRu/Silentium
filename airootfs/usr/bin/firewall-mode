@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MODE="${1:-}"
+TARGET="/etc/nftables.conf"
+
+usage() {
+  cat <<USAGE
+Использование: firewall-mode [normal|strict|status]
+  normal - обычный режим (интернет доступен без VPN)
+  strict - kill-switch режим (трафик только через VPN интерфейс)
+  status - показать текущий режим
+USAGE
+}
+
+current_mode() {
+  if grep -q 'strict.nft' "$TARGET"; then
+    echo "strict"
+  else
+    echo "normal"
+  fi
+}
+
+case "$MODE" in
+  normal)
+    cat > "$TARGET" <<'NFT'
+#!/usr/sbin/nft -f
+include "/etc/nftables/normal.nft"
+NFT
+    nft -f "$TARGET"
+    systemctl restart nftables
+    echo "[OK] Активирован normal режим"
+    ;;
+  strict)
+    cat > "$TARGET" <<'NFT'
+#!/usr/sbin/nft -f
+include "/etc/nftables/strict.nft"
+NFT
+    nft -f "$TARGET"
+    systemctl restart nftables
+    echo "[OK] Активирован strict режим"
+    ;;
+  status)
+    echo "Текущий режим firewall: $(current_mode)"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

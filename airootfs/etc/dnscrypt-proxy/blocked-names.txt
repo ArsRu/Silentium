@@ -1,0 +1,5 @@
+# OISD seed placeholder. Replace/append with downloaded OISD list.
+# Example blocked domains:
+adservice.google.com
+analytics.google.com
+facebook.com
