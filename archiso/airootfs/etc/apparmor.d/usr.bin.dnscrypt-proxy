@@ -1,0 +1,13 @@
+#include <tunables/global>
+
+/usr/bin/dnscrypt-proxy {
+  #include <abstractions/base>
+  capability net_bind_service,
+  network inet dgram,
+  network inet6 dgram,
+  /etc/dnscrypt-proxy.toml r,
+  /etc/dnscrypt-proxy-oidd.txt r,
+  /usr/bin/dnscrypt-proxy mr,
+  /var/cache/dnscrypt-proxy/** rw,
+  /var/log/dnscrypt-proxy/** rw,
+}

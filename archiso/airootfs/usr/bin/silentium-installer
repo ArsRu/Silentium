@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""Minimal TUI installer skeleton using curses (standard library only)."""
+import curses
+import subprocess
+
+MENU = [
+    "1) Partition disk manually (cfdisk)",
+    "2) Format + mount (example)",
+    "3) Pacstrap base system",
+    "4) Generate fstab",
+    "5) Chroot for final setup",
+    "q) Quit",
+]
+
+
+def run(cmd):
+    subprocess.run(cmd, shell=True, check=False)
+
+
+def main(stdscr):
+    curses.curs_set(0)
+    while True:
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Silentium Installer (minimal)")
+        for i, line in enumerate(MENU, start=2):
+            stdscr.addstr(i, 2, line)
+        stdscr.addstr(len(MENU) + 3, 2, "Select option: ")
+        stdscr.refresh()
+        ch = stdscr.getkey()
+        if ch == "1":
+            run("cfdisk")
+        elif ch == "2":
+            run("echo 'Use mkfs/mount commands manually for your layout.'")
+        elif ch == "3":
+            run("echo 'pacstrap /mnt base linux-zen linux-firmware grub networkmanager' ")
+        elif ch == "4":
+            run("echo 'genfstab -U /mnt >> /mnt/etc/fstab'")
+        elif ch == "5":
+            run("arch-chroot /mnt")
+        elif ch.lower() == "q":
+            break
+
+
+if __name__ == "__main__":
+    curses.wrapper(main)

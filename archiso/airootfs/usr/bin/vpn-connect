@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CFG_DIR="/etc/xray/configs"
+
+mapfile -t files < <(find "$CFG_DIR" -maxdepth 1 -name '*.json' -type f | sort)
+[[ ${#files[@]} -eq 0 ]] && { echo "Нет конфигов в $CFG_DIR"; exit 1; }
+
+echo "Доступные VPN-конфиги:"
+for i in "${!files[@]}"; do
+  printf "  %d) %s\n" "$((i+1))" "$(basename "${files[$i]}")"
+done
+read -r -p "Выберите номер: " n
+[[ "$n" =~ ^[0-9]+$ ]] || { echo "Неверный ввод"; exit 1; }
+idx=$((n-1))
+[[ $idx -ge 0 && $idx -lt ${#files[@]} ]] || { echo "Неверный выбор"; exit 1; }
+
+install -m 0644 "${files[$idx]}" /etc/xray/configs/default.json
+systemctl restart xray.service
+
+echo "Подключение переключено на $(basename "${files[$idx]}")."

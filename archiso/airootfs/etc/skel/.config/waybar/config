@@ -1,0 +1,14 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 30,
+  "modules-left": ["sway/workspaces", "sway/mode"],
+  "modules-center": ["clock"],
+  "modules-right": ["network", "cpu", "memory", "pulseaudio", "battery", "tray"],
+  "clock": {"format": "{:%Y-%m-%d %H:%M}"},
+  "network": {"format-wifi": "  {essid}", "format-ethernet": "󰈀  eth", "format-disconnected": "󰖪  offline"},
+  "pulseaudio": {"format": "  {volume}%", "format-muted": " muted"},
+  "cpu": {"format": "  {usage}%"},
+  "memory": {"format": "  {}%"},
+  "battery": {"format": "  {capacity}%"}
+}

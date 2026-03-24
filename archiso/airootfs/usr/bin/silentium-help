@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+cat <<'TXT'
+Silentium quick help
+--------------------
+spacman             - privacy-aware pacman wrapper
+priv-setup          - bootstrap privacy services
+vpn-connect         - switch Xray config and restart service
+firewall-mode       - switch firewall mode (normal|strict)
+silentium-update    - update all packages
+silentium-audit     - check privacy/security baseline
+TXT

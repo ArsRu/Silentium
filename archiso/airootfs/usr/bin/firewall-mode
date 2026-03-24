@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mode="${1:-}"
+[[ "$mode" =~ ^(normal|strict)$ ]] || { echo "Usage: firewall-mode [normal|strict]"; exit 1; }
+
+echo "$mode" > /etc/silentium/firewall.mode
+
+if [[ "$mode" == "normal" ]]; then
+  nft delete table inet silentium 2>/dev/null || true
+  nft -f /etc/nftables.conf
+  nft 'add chain inet filter output { type filter hook output priority 0; policy accept; }' 2>/dev/null || true
+  echo "Firewall mode set to normal."
+else
+  nft -f /etc/nftables.conf
+  echo "Firewall mode set to strict (kill-switch)."
+fi

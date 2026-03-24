@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "== Silentium privacy bootstrap =="
+systemctl enable --now dnscrypt-proxy.service
+systemctl enable --now nftables.service
+systemctl enable --now xray.service
+systemctl enable --now apparmor.service
+
+if [[ ! -s /etc/dnscrypt-proxy-oidd.txt ]]; then
+  echo "[+] Downloading OISD block list..."
+  curl -fsSL https://small.oisd.nl/domainswild -o /etc/dnscrypt-proxy-oidd.txt
+fi
+
+echo "[+] Updating ClamAV signatures..."
+freshclam || true
+
+echo "Готово. Используйте firewall-mode strict для kill-switch режима."

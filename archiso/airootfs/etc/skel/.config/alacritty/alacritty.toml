@@ -1,0 +1,11 @@
+[window]
+padding = { x = 8, y = 8 }
+opacity = 0.96
+
+[font]
+normal = { family = "JetBrains Mono", style = "Regular" }
+size = 11
+
+[colors.primary]
+background = "#0f111a"
+foreground = "#d6deeb"

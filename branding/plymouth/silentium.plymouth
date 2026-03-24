@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Silentium
+Description=Minimal Silentium splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/silentium
+ScriptFile=/usr/share/plymouth/themes/silentium/silentium.script
