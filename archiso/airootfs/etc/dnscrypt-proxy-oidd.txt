@@ -1,0 +1,5 @@
+# Placeholder for OISD blocklist. Replace with downloaded list during first setup.
+ad.doubleclick.net
+googleadservices.com
+facebook.com
+app-measurement.com

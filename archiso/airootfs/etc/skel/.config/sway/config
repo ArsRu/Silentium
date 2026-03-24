@@ -1,0 +1,41 @@
+# Минимальный конфиг Sway для Silentium.
+set $mod Mod4
+font pango:JetBrainsMono Nerd Font 10
+
+output * bg /usr/share/backgrounds/silentium/default.png fill
+
+exec_always --no-startup-id waybar
+exec --no-startup-id mako
+exec --no-startup-id /usr/lib/polkit-kde-authentication-agent-1
+
+bindsym $mod+Return exec alacritty
+bindsym $mod+d exec wofi --show drun
+bindsym $mod+Shift+q kill
+bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit Sway?' -B 'Yes' 'swaymsg exit'
+
+floating_modifier $mod normal
+
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+bindsym $mod+1 workspace 1
+bindsym $mod+2 workspace 2
+bindsym $mod+3 workspace 3
+bindsym $mod+4 workspace 4
+bindsym $mod+5 workspace 5
+
+bindsym $mod+Shift+1 move container to workspace 1
+bindsym $mod+Shift+2 move container to workspace 2
+
+bindsym XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
+bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+bindsym XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+
+include /etc/sway/config.d/*

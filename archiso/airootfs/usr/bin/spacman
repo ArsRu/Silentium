@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RED_LIST=(zoom discord teamviewer anydesk skype slack telegram-desktop)
+YELLOW_LIST=(nvidia nvidia-utils nvidia-settings broadcom-wl spotify steam)
+FORCE=0
+
+for arg in "$@"; do
+  [[ "$arg" == "--force-dangerous" ]] && FORCE=1
+done
+
+contains() {
+  local needle="$1"; shift
+  for item in "$@"; do
+    [[ "$item" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+PKGS=()
+for arg in "$@"; do
+  [[ "$arg" =~ ^- ]] && continue
+  PKGS+=("$arg")
+done
+
+for pkg in "${PKGS[@]:-}"; do
+  if contains "$pkg" "${RED_LIST[@]}"; then
+    if [[ $FORCE -ne 1 ]]; then
+      echo "[ОШИБКА] Пакет '$pkg' находится в КРАСНОМ списке."
+      echo "Он собирает метаданные и/или принадлежит компании с доказанной слежкой."
+      echo "Установка возможна только с флагом --force-dangerous."
+      exit 1
+    fi
+  fi
+
+  if contains "$pkg" "${YELLOW_LIST[@]}"; then
+    echo "[ПРЕДУПРЕЖДЕНИЕ] Пакет '$pkg' находится в ЖЁЛТОМ списке."
+    echo "Его исходный код закрыт, но явных доказательств слежки нет."
+    read -r -p "Продолжить установку? (y/N) " ans
+    case "$ans" in
+      y|Y|yes|YES) ;;
+      *) echo "Установка прервана."; exit 1 ;;
+    esac
+  fi
+done
+
+CLEAN_ARGS=()
+for arg in "$@"; do
+  [[ "$arg" == "--force-dangerous" ]] && continue
+  CLEAN_ARGS+=("$arg")
+done
+
+exec /usr/bin/pacman "${CLEAN_ARGS[@]}"

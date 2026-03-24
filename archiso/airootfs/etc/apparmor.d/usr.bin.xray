@@ -1,0 +1,12 @@
+#include <tunables/global>
+
+/usr/bin/xray {
+  #include <abstractions/base>
+  capability net_admin,
+  capability net_bind_service,
+  network inet stream,
+  network inet6 stream,
+  /etc/xray/** r,
+  /usr/bin/xray mr,
+  /var/log/xray/** rw,
+}

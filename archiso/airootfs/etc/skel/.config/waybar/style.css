@@ -1,0 +1,5 @@
+* { font-family: "JetBrainsMono Nerd Font", "Noto Sans"; font-size: 12px; }
+window#waybar { background: #11111b; color: #cdd6f4; border-bottom: 1px solid #313244; }
+#workspaces button { color: #cdd6f4; padding: 0 8px; }
+#workspaces button.focused { background: #45475a; }
+#clock, #network, #cpu, #memory, #pulseaudio, #battery { padding: 0 10px; }
