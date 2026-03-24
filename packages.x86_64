@@ -6,6 +6,7 @@ linux-firmware
 systemd
 systemd-sysvcompat
 grub
+syslinux
 efibootmgr
 sudo
 vi
